@@ -1,0 +1,53 @@
+#!/bin/bash
+
+if [ $# -lt 1 ]; then
+  echo "Usage: glt <command>"
+  echo "valid commands: init, push, stop"
+  exit 1
+fi
+
+COMMAND="$1"
+
+case "$COMMAND" in
+  init)
+    echo "init golite local container..."
+    current_dir="$(pwd)"
+    golite_location="$2"
+    current_dir_name="$(basename "$current_dir")"
+    if [ "$current_dir_name" != "openapispec" ]; then
+        echo "Please run this script from the openapispec directory"
+        exit 1
+    fi
+    docker build -t golite-local $golite_location
+    export GOLITE_CONTAINER_ID=$(docker run -d -p 8080:80 golite-local)
+    echo "Container ID: $GOLITE_CONTAINER_ID"
+    echo $GOLITE_CONTAINER_ID > ~/.golite/golite-container-id.txt
+    docker cp $current_dir $GOLITE_CONTAINER_ID:/app
+    ;;
+  stop )
+    echo "stop golite local container..."
+    CONTAINER_ID=$(cat ~/.golite/golite-container-id.txt)
+    docker stop $CONTAINER_ID
+    ;;  
+  push)
+    if [ $# -gt 1 ]; then
+      echo "Usage: glt push"
+      echo "glt push does not take any additional arguments"
+      exit 1
+    fi
+    echo "push changes to golite container..."
+    FQPN=$(pwd)
+    CONTAINER_ID=$(cat ~/.golite/golite-container-id.txt)
+    echo "Command: $FQPN"
+    MODULE=$(basename $FQPN)
+    echo "Module: $MODULE"
+    docker cp $FQPN $CONTAINER_ID:/app/$MODULE/
+    docker exec -it $CONTAINER_ID /usr/local/bin/golite-render.sh $MODULE
+    ;;
+  *)
+    echo "Unknown command: $COMMAND"
+    echo "Usage: glt <init|push>"
+    exit 1
+    ;;
+esac
+
