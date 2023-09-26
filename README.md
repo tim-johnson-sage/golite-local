@@ -24,4 +24,4 @@
 2. From the command line/powershell, run the `wsl` command
 2. Within your WSL distribution, you will need to make sure that you have [installed Docker](https://dev.to/bowmanjd/install-docker-on-windows-wsl-without-docker-desktop-34m9).
 3. Make sure the Docker daemon is running by typing `sudo service docker start` (or the appropriate escalated privileges for your distribution)
-4. You can now follow the standard instructions in the [Usage](#usage] and [Commands](#commands) sections.
+4. You can now follow the standard instructions in the [Usage](#usage) and [Commands](#commands) sections.
