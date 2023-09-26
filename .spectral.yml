@@ -1,0 +1,220 @@
+#  This is the super-set of all the rules that we check against OAS schema. Stoplight will use this file by default
+#  and it will help schema developer to know violation they are running into. There is a more stringent version
+#  core-rules.yml which enforces the violations which must be fixed before Make succeeds
+
+extends:
+  - 'spectral:oas'
+documentationUrl: 'https://intacct.atlassian.net/wiki/spaces/~397816204/pages/1369407790/YAML+Schema+for+NextGen+API+Objects'
+functions:
+  - readOnlyTrue
+  - ensurePropertiesExample
+  - ensureBooleanSchemaLevel
+  - ensureBooleanDefault
+  - ensureDateFormat
+  - ensureTypeExistence
+  - ensureSupportedXProperties
+  - ensureXMappedToValue
+
+rules:
+  ia-content-200-response-examples:
+   description: 200 response should have examples.
+   given:
+     - $..responses[?(@property == '200')].content[*]
+   type: validation
+   recommended: true
+   then:
+     - field: examples
+       function: truthy
+   severity: error
+  ia-content-400-response-examples:
+   description: 400 response should have example.
+   given:
+     - $..responses[?(@property=='400')]..application/json[*]
+   type: validation
+   recommended: true
+   then:
+     - field: example
+       function: truthy
+   severity: error   
+  ia-content-requestBody-examples:
+   description: Request Body should have examples.
+   given:
+     - $..requestBody.content[*]
+   type: validation
+   recommended: true
+   then:
+     - field: examples
+       function: truthy
+   severity: error
+  ia-paths-operation-summary:
+    description: Operation must have summary.
+    given: '$.paths[*][?( @property === ''get'' || @property === ''put'' || @property === ''post'' || @property === ''delete'' || @property === ''options'' || @property === ''head'' || @property === ''patch'' || @property === ''trace'' )]'
+    type: validation
+    recommended: true
+    then:
+      - field: summary
+        function: truthy
+    severity: error
+  ia-ensure-boolean-default:
+    description: Boolean properties must have default value.
+    given: '$..properties[*]'
+    severity: error
+    recommended: true
+    resolved: true
+    message: "{{error}}"
+    then:
+      function: ensureBooleanDefault
+  ia-ensure-properties-example:
+    description: Primitive properties must have examples.
+    given: '$..properties[*]'
+    severity: error
+    recommended: true
+    resolved: true
+    message: "{{error}}"
+    then:
+      function: ensurePropertiesExample
+  ia-x-mappedto:
+    description: Primitive property should have x-mappedTo field.
+    given: '$.properties[?(@.type != ''object'')]'
+    recommended: true
+    then:
+      field: x-mappedTo
+      function: truthy
+    severity: error
+  ia-x-mappedTo-missing-value:
+    description: x-mappedTo field is missing or has a null value.
+    given: '$..properties[*]'
+    recommended: true
+    message: "{{error}}"
+    then:
+      function: ensureXMappedToValue
+    severity: error
+  ia-x-href-readOnly:
+    description: href should always be readOnly.
+    given: $.properties.href
+    recommended: true
+    message: '{{error}}'
+    then:
+      field: readOnly
+      function: readOnlyTrue
+    severity: error
+  ia-x-object:
+    description: 'Only ''object'' or ''array'' types property could have the following fields [x-object]'
+    given: '$..[?(@property === ''x-object'')]^'
+    then:
+      field: type
+      function: pattern
+      functionOptions:
+        match: object|array
+    recommended: true
+    severity: error
+  ia-x-idempotence:
+    description: '[x-idempotence] must be a top-level property with only boolean values'
+    given: '$..[?(@property === ''x-idempotence'')]'
+    message: "{{error}}"
+    then:
+      function: ensureBooleanSchemaLevel
+    severity: error
+  ia-x-mappedToValues:
+    description: Only property with enum could have x-mappedToValues field.
+    given: '$.properties[?(!@.enum)]'
+    recommended: true
+    then:
+      field: x-mappedToValues
+      function: falsy
+    severity: error
+  ia-type-schema-exists:
+    description: type is a required attribute at schema level.
+    given: '$..schema'
+    type: validation
+    recommended: true
+    then:
+      function: ensureTypeExistence
+    severity: error
+  ia-type-properties-exists:
+    description: type is a required attribute in properties.
+    given: '$..properties[*]'
+    type: validation
+    recommended: true
+    then:
+      function: ensureTypeExistence
+    severity: error
+  ia-date-format:
+    description: Date and DateTime properties should have date and date-time format respectively.
+    given: '$..properties[*]'
+    type: validation
+    recommended: true
+    then:
+      function: ensureDateFormat
+    severity: error
+  ia-valid-x-properties:
+    description: Should only use x-* properties supported by NextGen API
+    given: $..[?(@path.includes("[\'x-"))]
+    type: validation
+    message: "{{error}}"
+    recommended: true
+    then:
+      function: ensureSupportedXProperties
+    severity: error
+  ia-paths-unsupported-operations:
+    description: Trace and Head are unsupported operations.
+    given: '$..paths[*].*~'
+    severity: error
+    recommended: true
+    resolved: true
+    message: '"{{value}}" operation is not supported.'
+    then:
+      function: pattern
+      functionOptions:
+        notMatch: "/^(trace|head)$/i"
+  ia-webURL:
+    description: 'webURL must be readOnly and should have x-mappedTo and x-mappedToLocationKey attributes'
+    given: $..properties..webURL
+    message: "{{error}}"
+    then:
+      - field: readOnly
+        function: truthy
+      - field: x-mappedToLocationKey
+        function: truthy
+      - field: x-mappedTo
+        function: truthy
+      - field: x-mappedToLocationKey
+        function: enumeration
+        functionOptions:
+          values:
+            - LOCATIONKEY
+            - MELOCATIONKEY
+            - MELOCKEY
+      - field: x-mappedTo
+        function: enumeration
+        functionOptions:
+          values:
+            - __recordURL__
+    severity: error
+  oas3-api-servers: 'off'
+  oas3-unused-component: 'off'
+  info-description: error
+  tag-description: error
+  operation-description: error
+  operation-tags: error
+except:
+  '#/properties/href':
+    - ia-x-mappedto
+  common/models/query.schema.yaml:
+    - ia-x-mappedto
+  common/models/view.schema.yaml:
+    - ia-x-mappedto
+  common/models/metadata.schema.yaml:
+    - ia-x-mappedto
+  common/models/object-model.schema.yaml:
+    - ia-x-mappedto
+  common/models/object-reference.schema.yaml:
+    - ia-x-mappedto
+  common/models/metadata-pages.v1.yaml:
+    - ia-x-mappedto
+  common/models/metadata-extended.v1.yaml:
+    - ia-x-mappedto
+  template.s1.api.yaml:
+    - operation-operationId-valid-in-url
+  co/paths/file.s1.api.yaml:
+    - oas3-unused-component
