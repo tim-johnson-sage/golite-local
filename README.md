@@ -14,5 +14,5 @@
 2. change the directory to a desired module: `cd cf`
 3. Render the schema: `glt push`
 4. check the schema at http://localhost:8080/cf.html
-5. check the linting reprot at http://localhost:8080/cf-lint.html
+5. check the linting report at http://localhost:8080/cf-lint.html
 6. Stop the golite container: `glt stop`
