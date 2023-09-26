@@ -2,7 +2,7 @@
  +-+-+-+-+-+-+
  |G|o|L|i|t|e|
  +-+-+-+-+-+-+
- golite-local
+ # golite-local
  ## Usage
 
 1. requires Docker CLI
