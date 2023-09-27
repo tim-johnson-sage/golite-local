@@ -6,7 +6,7 @@ export default (item, _, ctx) => {
   var isDateProperty = ctx.path[ctx.path.length - 1].match(dateRegex);
   var isDateTimeProperty = ctx.path[ctx.path.length - 1].match(dateTimeRegex);
 
-  if (isDateProperty) {
+  if (isDateProperty && isDateTimeProperty === false) {
     if (
         item.format != undefined &&
         item.type === 'string' &&
